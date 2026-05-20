@@ -18,7 +18,7 @@
   --shadow-lg: 0 25px 60px rgba(0,0,0,0.12);
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -26,6 +26,8 @@ body {
   background: var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 .App { min-height: 100vh; display: flex; flex-direction: column; }
@@ -66,30 +68,38 @@ main { flex: 1; }
   display: flex; align-items: center; gap: 0.4rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  flex-shrink: 0;
 }
 .logo-icon { font-size: 1.4rem; -webkit-text-fill-color: initial; }
 .nav-links {
   display: flex; align-items: center; gap: 1rem;
+  flex-wrap: nowrap;
 }
 .nav-links a {
   color: var(--text-muted); text-decoration: none; font-weight: 500;
   padding: 0.5rem 0.75rem; border-radius: 8px; transition: all 0.2s;
-  font-size: 0.95rem;
+  font-size: 0.95rem; white-space: nowrap;
+  min-height: 44px; display: flex; align-items: center;
 }
 .nav-links a:hover, .nav-links a.active {
   color: var(--primary); background: #eff6ff;
 }
-.nav-user { color: var(--text); font-weight: 500; font-size: 0.9rem; }
+.nav-user {
+  color: var(--text); font-weight: 500; font-size: 0.9rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 150px;
+}
 .btn-register {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white !important; padding: 0.5rem 1.25rem !important;
-  border-radius: 24px !important;
+  border-radius: 24px !important; min-height: 44px;
 }
 .btn-register:hover { opacity: 0.9; color: white !important; }
 .btn-logout {
   background: none; border: 1px solid var(--border); color: var(--text-muted);
   padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer;
   font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+  min-height: 44px; display: flex; align-items: center;
 }
 .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
@@ -501,17 +511,45 @@ main { flex: 1; }
   .resume-list { max-height: 220px; }
 }
 @media (max-width: 768px) {
-  .nav { padding: 0 1rem; }
-  .nav-links { gap: 0.5rem; }
-  .hero { padding: 3rem 1.25rem; }
+  .nav { padding: 0 1rem; height: 56px; }
+  .nav-links { gap: 0.4rem; }
+  .nav-links a { padding: 0.4rem 0.6rem; font-size: 0.88rem; }
+  .logo { font-size: 1.3rem; }
+  .btn-register { padding: 0.4rem 1rem !important; font-size: 0.85rem; }
+  .btn-logout { padding: 0.3rem 0.7rem; font-size: 0.82rem; }
+  .hero { padding: 3rem 1.25rem; min-height: 70vh; }
   .hero-content h1 { font-size: 1.8rem; }
+  .hero-sub { font-size: 1rem; }
+  .upload-card { padding: 2.5rem 1.5rem; }
   .main-panel { padding: 1.25rem; }
   .analysis-header { flex-direction: column; }
   .score-circle { align-self: center; }
   .jobs-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: 1fr; }
-  .stats { gap: 2rem; }
-  .auth-card { padding: 1.75rem; }
+  .stats { gap: 2rem; padding: 2rem 1rem; }
+  .stat-item strong { font-size: 1.8rem; }
+  .auth-card { padding: 1.75rem; border-radius: 18px; }
+  .auth-header h1 { font-size: 1.5rem; }
   .tabs { width: 100%; }
-  .tab { flex: 1; text-align: center; }
+  .tab { flex: 1; text-align: center; padding: 0.5rem 0.8rem; font-size: 0.88rem; }
+  .job-card { padding: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .nav { padding: 0 0.75rem; }
+  .logo { font-size: 1.1rem; }
+  .nav-user { display: none; }
+  .nav-links a { font-size: 0.82rem; padding: 0.35rem 0.5rem; }
+  .hero { padding: 2rem 1rem; }
+  .hero-content h1 { font-size: 1.5rem; }
+  .upload-card { padding: 2rem 1rem; border-radius: 16px; }
+  .upload-icon { font-size: 2.5rem; }
+  .features { padding: 3rem 1rem; }
+  .features h2 { font-size: 1.5rem; }
+  .feature-card { padding: 1.5rem; }
+  .auth-page { padding: 1rem; }
+  .auth-card { padding: 1.5rem; max-width: 100%; }
+  .form-group input { padding: 0.65rem 0.85rem; }
+  .btn-primary { padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .stats { flex-direction: column; gap: 1.5rem; }
 }

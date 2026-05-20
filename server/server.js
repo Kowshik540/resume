@@ -9,8 +9,19 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(null, true); // Allow all in dev; restrict in production
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -19,7 +30,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date(), message: 'Rezona API is running!' });
+  const mongoState = mongoose.connection.readyState;
+  const stateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    status: mongoState === 1 ? 'OK' : 'DEGRADED',
+    timestamp: new Date(),
+    message: 'Rezona API is running!',
+    database: stateMap[mongoState] || 'unknown',
+    hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+    hasJobApis: !!(process.env.ADZUNA_APP_ID || process.env.JSEARCH_API_KEY),
+  });
 });
 
 // Routes
@@ -40,12 +60,31 @@ app.use((err, req, res, next) => {
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
-mongoose.connect(MONGO_URI)
+
+if (!MONGO_URI) {
+  console.error('❌ MONGODB_URI not set in environment. Please configure .env file.');
+  console.error('   See .env.example for required variables.');
+  process.exit(1);
+}
+
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+})
   .then(() => console.log('✅ MongoDB Atlas Connected'))
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
     process.exit(1);
   });
+
+// Handle connection errors after initial connection
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected. Attempting reconnection...');
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

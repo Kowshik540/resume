@@ -581,17 +581,87 @@
 @keyframes spinDash { to { transform: rotate(360deg); } }
 
 /* ─── Structural Responsiveness Media Rules ─────────────────────────────── */
+@media (max-width: 1280px) {
+  .dashboard-main-content { padding: 24px 28px; }
+  .main-workspace-header { padding: 20px; }
+}
+
 @media (max-width: 1080px) {
   .dashboard-app-frame { flex-direction: column; overflow-y: auto; }
-  .dashboard-sidebar-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border-subtle); }
-  .sidebar-history-list { max-height: 200px; }
+  .dashboard-sidebar-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 16px;
+    max-height: none;
+  }
+  .sidebar-history-list {
+    max-height: 160px;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 10px;
+    padding-bottom: 4px;
+  }
+  .sidebar-history-list::-webkit-scrollbar { height: 4px; }
+  .sidebar-history-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+  .history-card-item {
+    min-width: 200px;
+    flex-shrink: 0;
+  }
+  .sidebar-user-section { margin-top: 12px; padding-top: 12px; }
+  .dashboard-main-content { padding: 20px 16px; }
+}
+
+@media (max-width: 768px) {
+  .main-workspace-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px;
+  }
+  .header-actions-area {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .workspace-primary-btn {
+    font-size: 0.82rem;
+    padding: 10px 16px;
+    flex: 1;
+    text-align: center;
+  }
+  .header-title-area h2 { font-size: 1.15rem; }
+  .header-meta-tags { flex-wrap: wrap; }
+  .workspace-tab-navbar { width: 100%; }
+  .tab-link-item { flex: 1; text-align: center; font-size: 0.82rem; padding: 10px 12px; }
+  .workspace-card-section { padding: 18px; }
+  .section-block-title { font-size: 0.92rem; }
+  .badge-pills-flex-grid { gap: 6px; }
+  .badge-pill-item { padding: 5px 10px; font-size: 0.75rem; }
+  .score-main-ring { width: 60px; height: 60px; }
+  .score-value-digit { font-size: 1.2rem; }
 }
 
 @media (max-width: 600px) {
-  .main-workspace-header { flex-direction: column; align-items: flex-start; gap: 20px; }
-  .header-actions-area { width: 100%; justify-content: space-between; }
   .accordion-trigger-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
   .accordion-metric-display { width: 100%; justify-content: space-between; }
   .progress-bar-track { flex: 1; }
   .workspace-bottom-actions-row { flex-direction: column; }
+  .workspace-primary-btn { width: 100%; justify-content: center; }
+  .workspace-secondary-btn { width: 100%; text-align: center; }
+  .sidebar-file-uploader { padding: 16px 10px; }
+  .uploader-label-text { font-size: 0.82rem; }
+}
+
+@media (max-width: 420px) {
+  .dashboard-sidebar-panel { padding: 12px 10px; }
+  .sidebar-header-row h3 { font-size: 0.95rem; }
+  .dashboard-main-content { padding: 14px 10px; }
+  .main-workspace-header { padding: 14px; border-radius: 10px; }
+  .workspace-card-section { padding: 14px; border-radius: 10px; }
+  .header-title-area h2 { font-size: 1rem; }
+  .feedback-list-item { font-size: 0.82rem; }
+  .resume-score-box { transform: scale(0.85); }
 }

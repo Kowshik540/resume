@@ -68,12 +68,13 @@ function wordCount(text) {
 /**
  * CONTENT scoring (max 30 pts)
  * Criteria: sections completeness, action verbs, quantification, word repetition
+ * STRICT: most resumes should score 12-20 here, not 25+
  */
 function scoreContent(text, rawText) {
   let pts = 0;
   const checks = {};
 
-  // 1. Section coverage (up to 12 pts — 2 per critical section)
+  // 1. Section coverage (up to 10 pts — critical sections must ALL be present for full marks)
   const criticalSections = ['contact','summary','experience','education','skills'];
   const sectionResults = {};
   for (const [name, kws] of Object.entries(SECTIONS)) {
@@ -82,35 +83,47 @@ function scoreContent(text, rawText) {
   const foundSections = Object.entries(sectionResults).filter(([,v]) => v).map(([k]) => k);
   const missingSections = Object.entries(sectionResults).filter(([,v]) => !v).map(([k]) => k);
   const criticalFound = criticalSections.filter(s => sectionResults[s]).length;
-  pts += Math.min(12, criticalFound * 2.4);
+  // Strict: need all 5 critical sections for full marks, partial credit is harsh
+  if (criticalFound === 5) pts += 10;
+  else if (criticalFound === 4) pts += 7;
+  else if (criticalFound === 3) pts += 4;
+  else pts += Math.max(0, criticalFound * 1.5);
   checks.sectionsFound = foundSections;
   checks.sectionsMissing = missingSections;
 
-  // 2. Quantified impact (up to 8 pts)
+  // Bonus for optional sections (projects, achievements) — up to 3 pts
+  const bonusSections = ['projects','achievements'];
+  const bonusFound = bonusSections.filter(s => sectionResults[s]).length;
+  pts += bonusFound * 1.5;
+
+  // 2. Quantified impact (up to 8 pts) — STRICT: need 5+ metrics for full marks
   const qPattern = /(\d+%|\d+\s*x\b|\$\d+|₹\d+|\d+\s*(users|clients|customers|projects|teams|members|hours|days|months|lakh|crore|k\b|ms\b|seconds?))/gi;
   const qExamples = (rawText.match(qPattern) || []).slice(0, 8);
-  const qScore = Math.min(8, qExamples.length * 1.3);
+  const qScore = qExamples.length >= 5 ? 8 : qExamples.length >= 3 ? 5 : qExamples.length >= 1 ? 2 : 0;
   pts += qScore;
   checks.quantifiedExamples = qExamples.slice(0, 5);
-  checks.hasQuantifiedImpact = qExamples.length >= 3;
+  checks.hasQuantifiedImpact = qExamples.length >= 5;
 
-  // 3. Action verbs (up to 6 pts)
+  // 3. Action verbs (up to 5 pts) — need 8+ unique strong verbs for full marks
   const verbsFound = STRONG_ACTION_VERBS.filter(v => text.includes(v));
-  pts += Math.min(6, verbsFound.length * 0.6);
+  if (verbsFound.length >= 8) pts += 5;
+  else if (verbsFound.length >= 5) pts += 3;
+  else if (verbsFound.length >= 2) pts += 1.5;
+  else pts += 0;
   checks.actionVerbsFound = verbsFound.length;
 
   // 4. Word repetition penalty (up to -4 pts)
   const words = text.split(/\s+/).filter(w => w.length > 5);
   const freq = {};
   words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
-  const overused = Object.entries(freq).filter(([,c]) => c > 6).map(([w]) => w);
-  if (overused.length > 3) pts -= 2;
-  if (overused.length > 6) pts -= 2;
+  const overused = Object.entries(freq).filter(([,c]) => c > 4).map(([w]) => w);
+  if (overused.length > 2) pts -= 2;
+  if (overused.length > 5) pts -= 2;
   checks.overusedWords = overused.slice(0, 5);
 
-  // 5. Weak verb penalty
+  // 5. Weak verb penalty — stricter
   const weakFound = WEAK_VERBS.filter(v => text.includes(v));
-  if (weakFound.length > 2) pts -= 2;
+  if (weakFound.length >= 1) pts -= weakFound.length * 1.5;
   checks.weakVerbsFound = weakFound;
 
   return { pts: Math.max(0, Math.min(30, pts)), max: 30, checks };
@@ -119,56 +132,73 @@ function scoreContent(text, rawText) {
 /**
  * FORMAT scoring (max 25 pts)
  * Criteria: file info, length, email, phone, special chars, structure
+ * STRICT: starts at 0 and earns points (not starts at 25 and deducts)
  */
 function scoreFormat(rawText) {
-  let pts = 25;
+  let pts = 0;
   const issues = [];
   const checks = {};
 
   const wc = wordCount(rawText);
   checks.wordCount = wc;
 
-  // Length check (optimal: 300–800 words for 1-2 pages)
-  if (wc < 200) { pts -= 6; issues.push('Resume is too short — aim for at least 300 words (1 full page)'); }
-  else if (wc < 300) { pts -= 2; issues.push('Resume is slightly short — add more detail to experience/projects'); }
-  else if (wc > 1000) { pts -= 3; issues.push('Resume may exceed 2 pages — trim to keep under ~800 words'); }
-  else if (wc > 800) { pts -= 1; issues.push('Resume is slightly long — consider condensing to 1–2 pages'); }
+  // Length check (optimal: 300–800 words for 1-2 pages) — up to 6 pts
+  if (wc >= 300 && wc <= 800) { pts += 6; }
+  else if (wc >= 250 && wc <= 1000) { pts += 4; }
+  else if (wc >= 200 && wc <= 1200) { pts += 2; }
+  else { pts += 0; }
+
+  if (wc < 200) issues.push('Resume is too short — aim for at least 300 words (1 full page)');
+  else if (wc < 300) issues.push('Resume is slightly short — add more detail to experience/projects');
+  else if (wc > 1000) issues.push('Resume may exceed 2 pages — trim to keep under ~800 words');
   checks.lengthOk = wc >= 300 && wc <= 800;
 
-  // Contact info
+  // Contact info — up to 8 pts
   const hasEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(rawText);
   const hasPhone = /(\+91|91)?[\s-]?[6-9]\d{9}/.test(rawText) ||
                    /(\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(rawText);
   const hasLinkedIn = /linkedin\.com\//i.test(rawText);
+  const hasGitHub = /github\.com\//i.test(rawText);
 
-  if (!hasEmail) { pts -= 4; issues.push('No email address detected — add it in the header'); }
-  if (!hasPhone) { pts -= 3; issues.push('No phone number found — include it for recruiter contact'); }
-  if (!hasLinkedIn) { pts -= 1; issues.push('LinkedIn URL missing — adds credibility'); }
+  if (hasEmail) pts += 3; else issues.push('No email address detected — add it in the header');
+  if (hasPhone) pts += 3; else issues.push('No phone number found — include it for recruiter contact');
+  if (hasLinkedIn) pts += 1; else issues.push('LinkedIn URL missing — adds credibility');
+  if (hasGitHub) pts += 1;
   checks.hasEmail = hasEmail;
   checks.hasPhone = hasPhone;
   checks.hasLinkedIn = hasLinkedIn;
 
-  // Special characters (ATS misreads)
-  const specialChars = (rawText.match(/[│┤├─┼|▪▸►◆◇★☆✓✗]/g) || []).length;
-  if (specialChars > 15) { pts -= 4; issues.push('Too many special/box-drawing characters — ATS may garble your content'); }
-  else if (specialChars > 5) { pts -= 1; issues.push('A few special characters detected — prefer plain hyphens/dashes'); }
+  // Special characters (ATS misreads) — up to 4 pts (earn by NOT having them)
+  const specialChars = (rawText.match(/[│┤├─┼|▪▸►◆◇★☆✓✗●○■□▶◀]/g) || []).length;
+  if (specialChars <= 2) pts += 4;
+  else if (specialChars <= 5) pts += 2;
+  else if (specialChars <= 15) { pts += 0; issues.push('A few special characters detected — prefer plain hyphens/dashes'); }
+  else { pts -= 2; issues.push('Too many special/box-drawing characters — ATS may garble your content'); }
   checks.specialCharCount = specialChars;
   checks.specialCharsOk = specialChars <= 5;
 
-  // Bullet point consistency
+  // Bullet point consistency — up to 4 pts
   const bulletLines = (rawText.match(/^[•\-\*]\s/gm) || []).length;
   checks.bulletPointCount = bulletLines;
-  if (bulletLines < 3 && wc > 300) {
-    pts -= 2;
+  if (bulletLines >= 8) pts += 4;
+  else if (bulletLines >= 5) pts += 3;
+  else if (bulletLines >= 3) pts += 1;
+  else if (wc > 300) {
     issues.push('Few or no bullet points — structure experience with bullets for ATS clarity');
   }
 
+  // Clear section headers (look for uppercase or bold-pattern headers) — up to 3 pts
+  const headerPatterns = (rawText.match(/^[A-Z][A-Z\s]{3,}$/gm) || []).length;
+  if (headerPatterns >= 4) pts += 3;
+  else if (headerPatterns >= 2) pts += 1.5;
+  
   return { pts: Math.max(0, Math.min(25, pts)), max: 25, issues, checks };
 }
 
 /**
  * SKILLS scoring (max 25 pts)
  * Criteria: hard skills breadth, soft skills, JD match, certifications
+ * STRICT: need 10+ relevant skills for full marks, not just 6
  */
 function scoreSkills(text, rawText, jobDescription = '') {
   const found = TECH_SKILLS.filter(s => {
@@ -179,18 +209,42 @@ function scoreSkills(text, rawText, jobDescription = '') {
     }
   });
 
-  let pts = Math.min(18, found.length * 1.4);
+  // Tiered scoring — need substantial skills for good score
+  let pts = 0;
+  if (found.length >= 15) pts = 16;
+  else if (found.length >= 12) pts = 13;
+  else if (found.length >= 9) pts = 10;
+  else if (found.length >= 6) pts = 7;
+  else if (found.length >= 4) pts = 4;
+  else if (found.length >= 2) pts = 2;
+  else pts = 0;
 
-  // Boost for certifications
-  if (/certif(ied|ication)|aws certified|google cloud|microsoft certified|pmp|cfa|cpa/i.test(text)) {
-    pts += 2;
-  }
+  // Boost for certifications (up to 3 pts)
+  const hasCerts = /certif(ied|ication)|aws certified|google cloud certified|microsoft certified|pmp|cfa|cpa|comptia/i.test(text);
+  if (hasCerts) pts += 3;
 
-  // JD keyword match bonus
+  // Skill diversity bonus — having skills across multiple categories (up to 3 pts)
+  const categories = {
+    frontend: ['react','angular','vue','nextjs','html','css','tailwind','redux','svelte'],
+    backend: ['node.js','nodejs','express','django','flask','fastapi','spring','laravel','graphql'],
+    database: ['mongodb','mysql','postgresql','redis','sqlite','oracle','elasticsearch','dynamodb'],
+    devops: ['aws','azure','gcp','docker','kubernetes','terraform','jenkins','ci/cd','github actions'],
+    languages: ['javascript','python','java','typescript','go','rust','c++','c#','kotlin','swift'],
+  };
+  const catCount = Object.values(categories).filter(cat => cat.some(s => found.includes(s))).length;
+  if (catCount >= 4) pts += 3;
+  else if (catCount >= 3) pts += 2;
+  else if (catCount >= 2) pts += 1;
+
+  // JD keyword match bonus (up to 3 pts) — only if JD provided
   const jdSkillMatch = jobDescription
     ? found.filter(s => jobDescription.toLowerCase().includes(s)).length
     : 0;
-  pts = Math.min(25, pts + jdSkillMatch * 0.5);
+  if (jdSkillMatch >= 5) pts += 3;
+  else if (jdSkillMatch >= 3) pts += 2;
+  else if (jdSkillMatch >= 1) pts += 1;
+
+  pts = Math.min(25, pts);
 
   // Skill gap suggestions
   const webPool = ['react','typescript','node.js','mongodb','docker','aws','git','postgresql'];
@@ -207,8 +261,9 @@ function scoreSkills(text, rawText, jobDescription = '') {
     jdMatchCount: jdSkillMatch,
     checks: {
       skillCount: found.length,
-      hasCertifications: /certif/i.test(text),
-      skillsOk: found.length >= 6,
+      hasCertifications: hasCerts,
+      skillsOk: found.length >= 9,
+      categoryDiversity: catCount,
     },
   };
 }
@@ -216,50 +271,58 @@ function scoreSkills(text, rawText, jobDescription = '') {
 /**
  * STYLE scoring (max 20 pts)
  * Criteria: active voice, no buzzwords, date consistency, tense consistency
+ * STRICT: earns points instead of starting high
  */
 function scoreStyle(text, rawText) {
-  let pts = 20;
+  let pts = 0;
   const issues = [];
   const checks = {};
 
-  // Buzzwords penalty
+  // Start by earning points for good practices
+
+  // 1. No buzzwords (earn up to 5 pts)
   const foundBuzzwords = BUZZWORDS.filter(b => text.includes(b));
-  if (foundBuzzwords.length > 0) {
-    pts -= Math.min(6, foundBuzzwords.length * 2);
-    issues.push(`Remove buzzwords/clichés: ${foundBuzzwords.join(', ')}`);
-  }
+  if (foundBuzzwords.length === 0) pts += 5;
+  else if (foundBuzzwords.length <= 1) pts += 3;
+  else if (foundBuzzwords.length <= 2) pts += 1;
+  else issues.push(`Remove buzzwords/clichés: ${foundBuzzwords.join(', ')}`);
   checks.buzzwords = foundBuzzwords;
   checks.buzzwordsOk = foundBuzzwords.length === 0;
 
-  // Personal pronouns (ATS best practice: no I/me/my)
+  // 2. No personal pronouns (earn up to 4 pts)
   const pronounMatch = (rawText.match(/\b(I|me|my|myself|we|our)\b/g) || []).length;
-  if (pronounMatch > 4) {
-    pts -= 3;
-    issues.push('Avoid personal pronouns (I, me, my) — use third-person implied style');
-  }
+  if (pronounMatch === 0) pts += 4;
+  else if (pronounMatch <= 2) pts += 2;
+  else if (pronounMatch <= 4) pts += 1;
+  else issues.push('Avoid personal pronouns (I, me, my) — use third-person implied style');
   checks.pronounCount = pronounMatch;
   checks.noPronounsOk = pronounMatch <= 2;
 
-  // Date format consistency
+  // 3. Date format consistency (earn up to 4 pts)
   const dateFormats = [
     (rawText.match(/\d{4}\s*[-–]\s*\d{4}/g) || []).length,
     (rawText.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}/g) || []).length,
     (rawText.match(/\d{2}\/\d{4}/g) || []).length,
   ].filter(c => c > 0).length;
-  if (dateFormats > 1) {
-    pts -= 2;
-    issues.push('Inconsistent date formats detected — standardize to "Month Year – Month Year"');
-  }
+  if (dateFormats <= 1) { pts += 4; }
+  else { pts += 1; issues.push('Inconsistent date formats detected — standardize to "Month Year – Month Year"'); }
   checks.dateConsistency = dateFormats <= 1;
 
-  // Active vs passive voice heuristic
+  // 4. Active voice (earn up to 4 pts)
   const passiveMatches = (rawText.match(/\b(was|were|been|being)\s+\w+ed\b/gi) || []).length;
-  if (passiveMatches > 4) {
-    pts -= 2;
-    issues.push('Too many passive voice constructions — use active verbs (built, led, designed)');
-  }
+  if (passiveMatches === 0) pts += 4;
+  else if (passiveMatches <= 2) pts += 3;
+  else if (passiveMatches <= 4) pts += 1;
+  else issues.push('Too many passive voice constructions — use active verbs (built, led, designed)');
   checks.passiveVoiceCount = passiveMatches;
   checks.activeVoiceOk = passiveMatches <= 2;
+
+  // 5. Professional tone — no ALL CAPS abuse (earn up to 3 pts)
+  const allCapsWords = (rawText.match(/\b[A-Z]{5,}\b/g) || []).filter(w => 
+    !['EDUCATION','EXPERIENCE','SKILLS','PROJECTS','SUMMARY','ACHIEVEMENTS','CERTIFICATIONS','OBJECTIVE'].includes(w)
+  ).length;
+  if (allCapsWords <= 1) pts += 3;
+  else if (allCapsWords <= 3) pts += 1;
 
   return { pts: Math.max(0, Math.min(20, pts)), max: 20, issues, checks };
 }
@@ -291,10 +354,10 @@ function scoreKeywords(text, jobTitle, jobDescription) {
 // ─── Grade ─────────────────────────────────────────────────────────────────
 
 function grade(score) {
-  if (score >= 85) return { letter: 'A', label: 'Excellent — ATS Ready', color: '#10b981' };
-  if (score >= 70) return { letter: 'B', label: 'Good — Minor Fixes Needed', color: '#6366f1' };
-  if (score >= 55) return { letter: 'C', label: 'Average — Needs Improvement', color: '#f59e0b' };
-  if (score >= 40) return { letter: 'D', label: 'Below Average — Major Gaps', color: '#f97316' };
+  if (score >= 80) return { letter: 'A', label: 'Excellent — ATS Ready', color: '#10b981' };
+  if (score >= 65) return { letter: 'B', label: 'Good — Minor Fixes Needed', color: '#6366f1' };
+  if (score >= 50) return { letter: 'C', label: 'Average — Needs Improvement', color: '#f59e0b' };
+  if (score >= 35) return { letter: 'D', label: 'Below Average — Major Gaps', color: '#f97316' };
   return               { letter: 'F', label: 'Poor — Significant Overhaul Needed', color: '#ef4444' };
 }
 
@@ -310,14 +373,22 @@ function buildSuggestions(content, format, skills, style, kw) {
     tips.push('🏆 Add Achievements or Certifications section');
   if (!content.checks.hasQuantifiedImpact)
     tips.push('📊 Quantify impact — "reduced load time by 40%", "served 10k users", "saved ₹2L/month"');
-  if (content.checks.actionVerbsFound < 4)
-    tips.push('🔡 Use strong action verbs: architected, engineered, optimized, spearheaded, deployed');
-  if (content.checks.overusedWords.length > 0)
+  if (content.checks.actionVerbsFound < 5)
+    tips.push('🔡 Use more strong action verbs: architected, engineered, optimized, spearheaded, deployed');
+  if (content.checks.overusedWords && content.checks.overusedWords.length > 0)
     tips.push(`🔁 Reduce word repetition: ${content.checks.overusedWords.slice(0,4).join(', ')}`);
+  if (skills.checks.skillCount < 9)
+    tips.push(`⚡ Add more technical skills — you have ${skills.checks.skillCount}, aim for 9+ relevant ones`);
   if (skills.suggestions.length > 0)
     tips.push(`⚡ Consider adding in-demand skills: ${skills.suggestions.slice(0,4).join(', ')}`);
+  if (skills.checks.categoryDiversity && skills.checks.categoryDiversity < 3)
+    tips.push('🎯 Diversify skills across categories: frontend, backend, databases, DevOps');
   if (!format.checks.hasLinkedIn)
     tips.push('🔗 Add your LinkedIn URL — most recruiters verify candidates there');
+  if (!format.checks.hasEmail)
+    tips.push('📧 Add a professional email address in your header');
+  if (format.checks.bulletPointCount < 5)
+    tips.push('📋 Use more bullet points (aim for 8+) to structure your experience clearly');
   format.issues.forEach(i => tips.push(`⚠️ ${i}`));
   style.issues.forEach(i => tips.push(`✏️ ${i}`));
   if (kw.missing.length > 0)
