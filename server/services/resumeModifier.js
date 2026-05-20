@@ -42,14 +42,14 @@ Your task: Rewrite key resume sections to better match this job. Follow these st
 
 Respond with ONLY a valid JSON object (no markdown, no explanation) in this exact structure:
 {
-  "professionalSummary": "2-3 sentence rewritten summary targeting this job",
+  "professionalSummary": "2-3 sentence rewritten summary targeting this job, based on the candidate's ACTUAL experience",
   "skillsToAdd": ["skill1", "skill2"],
   "experienceBullets": [
-    {
-      "context": "Brief note on which job/project this applies to",
-      "original": "original bullet point text",
-      "improved": "rewritten bullet using JD keywords and stronger action verbs"
-    }
+    "Rewritten bullet point 1 using JD keywords and stronger action verbs",
+    "Rewritten bullet point 2 based on candidate's actual experience",
+    "Rewritten bullet point 3 with quantified achievements where possible",
+    "Rewritten bullet point 4 aligned with job requirements",
+    "Rewritten bullet point 5"
   ],
   "changes": [
     "Short plain-English description of each change made"
@@ -168,23 +168,13 @@ function localModifyFallback(resumeText, jobTitle, jobDescription, missingSkills
   const topResumeSkills = resumeSkills.slice(0, 4).join(', ') || 'modern technologies';
   const professionalSummary = `Results-driven ${jobTitle} with hands-on experience in ${topResumeSkills}. Proven ability to deliver high-quality, scalable solutions with a focus on ${topKeywords.slice(0, 2).join(' and ') || 'performance and reliability'}. Eager to contribute expertise in ${skillsToAdd[0] || resumeSkills[0] || 'software development'} to drive impactful outcomes.`;
 
-  // Generate improved bullets
+  // Generate improved bullets as simple strings
   const experienceBullets = [
-    {
-      context: 'Technical Delivery',
-      original: 'Worked on web applications and features.',
-      improved: `Designed and delivered production-grade features using ${resumeSkills[0] || 'modern frameworks'}, aligning with ${topKeywords[0] || 'scalability'} and ${topKeywords[1] || 'performance'} requirements outlined for this ${jobTitle} role.`,
-    },
-    {
-      context: 'Performance & Optimization',
-      original: 'Improved application performance.',
-      improved: `Optimized application architecture resulting in measurable improvements to ${topKeywords[2] || 'load times'} and user experience, directly relevant to the ${topKeywords[3] || 'technical'} challenges of this position.`,
-    },
-    {
-      context: 'Collaboration & Leadership',
-      original: 'Collaborated with team members.',
-      improved: `Led cross-functional collaboration with engineering and product teams to deliver ${topKeywords[4] || 'feature'}-aligned solutions, demonstrating the communication skills required for this ${jobTitle} opportunity.`,
-    },
+    `Designed and delivered production-grade features using ${resumeSkills[0] || 'modern frameworks'}, aligning with ${topKeywords[0] || 'scalability'} and ${topKeywords[1] || 'performance'} requirements for ${jobTitle} role`,
+    `Optimized application architecture resulting in measurable improvements to ${topKeywords[2] || 'load times'} and user experience, directly relevant to the technical challenges of this position`,
+    `Led cross-functional collaboration with engineering and product teams to deliver ${topKeywords[3] || 'feature'}-aligned solutions on schedule`,
+    `Implemented ${resumeSkills[1] || 'backend'} solutions handling production workloads with focus on ${topKeywords[4] || 'reliability'} and clean code practices`,
+    `Built and maintained ${resumeSkills[2] || 'full-stack'} applications following ${topKeywords[5] || 'agile'} development methodology with comprehensive testing`,
   ];
 
   const changes = [
