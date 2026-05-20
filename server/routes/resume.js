@@ -189,4 +189,69 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
+// ─── POST /api/resume/reanalyze ──────────────────────────────────────────────
+// Re-run ATS analysis on an existing resume (e.g. after user edits or with JD context)
+router.post('/reanalyze', auth, async (req, res) => {
+  try {
+    const { resumeId, jobTitle = '', jobDescription = '' } = req.body;
+    if (!resumeId) return res.status(400).json({ error: 'resumeId is required' });
+
+    const record = await Resume.findOne({ _id: resumeId, userId: req.user.id });
+    if (!record) return res.status(404).json({ error: 'Resume not found' });
+
+    let resumeText = record.resumeText || '';
+
+    // If no stored text, try to re-parse the PDF
+    if (!resumeText && record.filepath && fs.existsSync(record.filepath)) {
+      const pdfData = await pdfParse(fs.readFileSync(record.filepath));
+      resumeText = pdfData.text || '';
+      if (resumeText.trim().length > 50) {
+        await Resume.updateOne({ _id: record._id }, { $set: { resumeText } });
+      }
+    }
+
+    if (!resumeText || resumeText.trim().length < 50) {
+      return res.status(422).json({ error: 'Cannot read resume text. Please re-upload.' });
+    }
+
+    const analysis = analyzeResume(resumeText, jobTitle, jobDescription);
+
+    // Update stored analysis and score
+    await Resume.updateOne({ _id: record._id }, {
+      $set: { atsScore: analysis.score, analysis, skills: analysis.skills }
+    });
+
+    res.json({ success: true, analysis });
+  } catch (err) {
+    console.error('[reanalyze]', err);
+    res.status(500).json({ error: err.message || 'Re-analysis failed' });
+  }
+});
+
+// ─── POST /api/resume/download ───────────────────────────────────────────────
+// Acknowledge download request - actual HTML rendering happens client-side
+router.post('/download', auth, async (req, res) => {
+  try {
+    const { resumeId, templateId, jobTitle } = req.body;
+
+    if (!resumeId || !templateId) {
+      return res.status(400).json({ error: 'resumeId and templateId are required' });
+    }
+
+    const record = await Resume.findOne({ _id: resumeId, userId: req.user.id });
+    if (!record) return res.status(404).json({ error: 'Resume not found' });
+
+    res.json({
+      success: true,
+      message: 'Use client-side template rendering for download',
+      resumeId: record._id,
+      templateId,
+      jobTitle: jobTitle || '',
+    });
+  } catch (err) {
+    console.error('[download]', err);
+    res.status(500).json({ error: 'Download generation failed' });
+  }
+});
+
 module.exports = router;

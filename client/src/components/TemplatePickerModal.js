@@ -402,8 +402,9 @@ function TemplateMockup({ template, selected, onSelect }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const TemplatePickerModal = ({ tailoredResult, jobTitle, originalResume, onClose }) => {
-  const [selectedId, setSelectedId] = useState('modern-blue');
-  const [showPreview, setShowPreview] = useState(false);
+  const preSelected = tailoredResult?.selectedTemplate || 'modern-blue';
+  const [selectedId, setSelectedId] = useState(preSelected);
+  const [showPreview, setShowPreview] = useState(true); // Go directly to preview since template was already chosen
   const [previewHtml, setPreviewHtml] = useState('');
 
   const selectedTemplate = RESUME_TEMPLATES.find(t => t.id === selectedId);

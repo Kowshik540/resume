@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 16px;
   animation: overlayIn 0.2s ease;
 }
 
@@ -23,7 +23,7 @@
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   width: 100%;
-  max-width: 680px;
+  max-width: 780px;
   max-height: 92vh;
   overflow-y: auto;
   box-shadow: 0 32px 100px rgba(0,0,0,0.7);
@@ -40,7 +40,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 28px 28px 20px;
+  padding: 24px 28px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
@@ -51,14 +51,14 @@
 }
 
 .tailor-modal__icon {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
 .tailor-modal__title {
   font-family: 'Sora', system-ui, sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: #f0f0f8;
   margin: 0 0 4px;
@@ -66,7 +66,7 @@
 
 .tailor-modal__subtitle {
   color: #8b8fa8;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   margin: 0;
 }
 
@@ -83,16 +83,15 @@
   transition: all 0.15s;
 }
 .tailor-modal__close:hover { background: rgba(255,255,255,0.12); color: #f0f0f8; }
+.tailor-modal__close:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Examples */
 .tailor-modal__examples {
-  padding: 16px 28px;
+  padding: 12px 0 16px;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  background: rgba(255,255,255,0.02);
 }
 
 .tailor-modal__examples-label {
@@ -122,7 +121,7 @@
 }
 
 /* Form */
-.tailor-modal__form { padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+.tailor-modal__form { display: flex; flex-direction: column; gap: 18px; }
 
 .tailor-field { display: flex; flex-direction: column; gap: 6px; }
 
@@ -168,7 +167,7 @@
   font-size: 0.9rem;
   font-family: 'DM Sans', system-ui, sans-serif;
   resize: vertical;
-  min-height: 180px;
+  min-height: 140px;
   transition: border-color 0.2s;
   outline: none;
   width: 100%;
@@ -196,7 +195,12 @@
   border-radius: 8px;
   padding: 10px 16px;
   font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.error-icon { flex-shrink: 0; }
 
 .tailor-value-banner {
   background: rgba(99,102,241,0.08);
@@ -217,6 +221,7 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  padding-top: 4px;
 }
 
 .tailor-btn-ghost {
@@ -262,10 +267,11 @@
 
 /* Progress Steps (shown while loading) */
 .tailor-progress {
-  padding: 0 28px 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
 }
 
 .tailor-progress__step {
@@ -278,6 +284,7 @@
 }
 
 .tailor-progress__step.active { color: #a5b4fc; }
+.tailor-progress__step.done { color: #10b981; }
 
 .tailor-progress__dot {
   width: 8px; height: 8px;
@@ -292,6 +299,11 @@
   animation: pulseDot 1.2s ease infinite;
 }
 
+.tailor-progress__step.done .tailor-progress__dot {
+  background: #10b981;
+  animation: none;
+}
+
 @keyframes pulseDot {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.4); opacity: 0.7; }
@@ -303,4 +315,237 @@
   .tailor-modal__form { padding: 20px; }
   .tailor-modal__actions { flex-direction: column; }
   .tailor-btn-primary, .tailor-btn-ghost { width: 100%; justify-content: center; }
+}
+
+
+
+/* ─── Step Progress Bar ─── */
+.tailor-steps-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 28px 14px;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.tailor-step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tailor-step-indicator .step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.06);
+  color: #6b7280;
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.tailor-step-indicator.active .step-num {
+  background: rgba(99,102,241,0.15);
+  color: #a5b4fc;
+  border-color: #6366f1;
+}
+
+.tailor-step-indicator.done .step-num {
+  background: #10b981;
+  color: #fff;
+  border-color: #10b981;
+}
+
+.tailor-step-indicator .step-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tailor-step-indicator.active .step-label { color: #a5b4fc; }
+.tailor-step-indicator.done .step-label { color: #10b981; }
+
+.step-connector {
+  width: 48px;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  margin: 0 8px;
+  margin-bottom: 18px;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.connector-fill {
+  width: 0;
+  height: 100%;
+  background: #6366f1;
+  transition: width 0.4s ease;
+}
+
+.connector-fill.filled { width: 100%; }
+
+/* ─── Modal Body ─── */
+.tailor-modal__body {
+  padding: 20px 28px 24px;
+}
+
+/* ─── Template Grid (Step 1) ─── */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.template-card {
+  background: rgba(255,255,255,0.03);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  text-align: left;
+  padding: 0;
+}
+
+.template-card:hover {
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.template-card--active {
+  border-color: var(--tmpl-color, #6366f1);
+  box-shadow: 0 0 0 1px var(--tmpl-color, #6366f1), 0 6px 24px rgba(0,0,0,0.3);
+}
+
+.template-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tmpl-color, #6366f1);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.template-preview {
+  padding: 12px 10px 8px;
+  min-height: 100px;
+}
+
+.tmpl-header-bar {
+  height: 18px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.tmpl-body-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tmpl-line {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+}
+
+.tmpl-dots {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.tmpl-dot {
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.template-info {
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.template-info h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f0f0f8;
+  margin: 0 0 2px;
+}
+
+.template-info p {
+  font-size: 0.72rem;
+  color: #8b8fa8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ─── Processing Animation (Step 3) ─── */
+.tailor-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 28px;
+  gap: 28px;
+}
+
+.processing-visual {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.processing-ring {
+  width: 72px;
+  height: 72px;
+  border: 3px solid rgba(99,102,241,0.15);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.processing-ring-inner {
+  position: absolute;
+  top: 12px; left: 12px;
+  width: 48px; height: 48px;
+  border: 3px solid rgba(99,102,241,0.08);
+  border-bottom-color: #a5b4fc;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite reverse;
+}
+
+/* ─── Responsive additions ─── */
+@media (max-width: 700px) {
+  .template-grid { grid-template-columns: repeat(2, 1fr); }
+  .tailor-steps-bar { padding: 14px 16px 10px; }
+  .step-connector { width: 28px; }
+}
+
+@media (max-width: 480px) {
+  .tailor-modal { max-width: 100%; }
+  .tailor-modal__body { padding: 16px; }
+  .template-grid { gap: 10px; }
+  .tailor-modal__examples { flex-direction: column; align-items: flex-start; }
 }

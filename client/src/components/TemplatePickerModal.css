@@ -315,9 +315,29 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 900px) {
+  .tpicker-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tpicker-modal--wide { max-width: 95%; }
+}
+
 @media (max-width: 700px) {
   .tpicker-grid { grid-template-columns: repeat(2, 1fr); }
   .tpicker-modal--wide { max-width: 100%; }
   .tpicker-body { padding: 20px; }
   .tpicker-header { padding: 20px; }
+  .tpicker-preview-toolbar { padding: 12px 16px; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .tpicker-preview-btns { width: 100%; justify-content: flex-end; }
+  .tpicker-actions { padding: 16px 20px; flex-direction: column; }
+  .tpicker-btn-primary, .tpicker-btn-ghost { width: 100%; justify-content: center; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .tpicker-modal { border-radius: 16px; max-height: 96vh; }
+  .tpicker-header { padding: 16px; }
+  .tpicker-body { padding: 14px; }
+  .tpicker-grid { gap: 10px; }
+  .tpicker-card__info { padding: 10px; }
+  .tpicker-card__info h3 { font-size: 0.8rem; }
+  .tpicker-value-banner { margin: 0 16px; padding: 12px 14px; font-size: 0.8rem; }
+  .tpicker-download-note { padding: 10px 16px; }
 }

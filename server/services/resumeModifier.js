@@ -12,10 +12,11 @@ const axios = require('axios');
  * @returns {object} { professionalSummary, skillsToAdd, experienceBullets, changes, atsImprovementEstimate }
  */
 async function modifyResumeForJob(resumeText, jobTitle, jobDescription, missingSkills = []) {
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY; // read fresh each call so .env reloads work
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
+  // If no API key, use intelligent local fallback
   if (!ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY not set in .env');
+    return localModifyFallback(resumeText, jobTitle, jobDescription, missingSkills);
   }
 
   const prompt = `You are an expert resume writer and ATS optimization specialist.
@@ -95,8 +96,71 @@ Respond with ONLY a valid JSON object (no markdown, no explanation) in this exac
     } else {
       console.error('[resumeModifier]', err.message);
     }
-    throw new Error('Resume modification failed: ' + (err.response?.data?.error?.message || err.message));
+    // Fall back to local modifier instead of throwing
+    console.log('[resumeModifier] Falling back to local modification engine');
+    return localModifyFallback(resumeText, jobTitle, jobDescription, missingSkills);
   }
+}
+
+/**
+ * Local fallback modifier — works without API key
+ * Generates tailored content by analyzing JD keywords vs resume skills
+ */
+function localModifyFallback(resumeText, jobTitle, jobDescription, missingSkills = []) {
+  const jdLower = (jobTitle + ' ' + jobDescription).toLowerCase();
+  const resumeLower = resumeText.toLowerCase();
+
+  // Extract JD keywords (meaningful words that appear frequently)
+  const stopWords = new Set(['and','or','the','a','an','in','on','at','for','to','of','with','is','are','was','were','be','have','has','had','will','would','could','should','may','that','this','from','by','as','so','if','not','but','also','can','use','using','our','we','you','your','team','work','role','experience','looking','join','ability','strong','well','good','must','including','etc','based']);
+  const jdWords = jdLower.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3 && !stopWords.has(w));
+  const freq = {};
+  jdWords.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  const topKeywords = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([w]) => w);
+
+  // Find skills mentioned in JD but not in resume
+  const techSkills = ['react','angular','vue','typescript','javascript','python','java','node.js','express','mongodb','postgresql','docker','kubernetes','aws','azure','gcp','graphql','redis','django','flask','tensorflow','pytorch','pandas','sql','git','linux','nginx','terraform','jenkins','agile','scrum','figma','tailwind','next.js','flutter','kotlin','swift','go','rust'];
+  const jdSkills = techSkills.filter(s => jdLower.includes(s));
+  const resumeSkills = techSkills.filter(s => resumeLower.includes(s));
+  const skillsToAdd = jdSkills.filter(s => !resumeSkills.includes(s)).slice(0, 6);
+
+  // Generate professional summary
+  const topResumeSkills = resumeSkills.slice(0, 4).join(', ') || 'modern technologies';
+  const professionalSummary = `Results-driven ${jobTitle} with hands-on experience in ${topResumeSkills}. Proven ability to deliver high-quality, scalable solutions with a focus on ${topKeywords.slice(0, 2).join(' and ') || 'performance and reliability'}. Eager to contribute expertise in ${skillsToAdd[0] || resumeSkills[0] || 'software development'} to drive impactful outcomes.`;
+
+  // Generate improved bullets
+  const experienceBullets = [
+    {
+      context: 'Technical Delivery',
+      original: 'Worked on web applications and features.',
+      improved: `Designed and delivered production-grade features using ${resumeSkills[0] || 'modern frameworks'}, aligning with ${topKeywords[0] || 'scalability'} and ${topKeywords[1] || 'performance'} requirements outlined for this ${jobTitle} role.`,
+    },
+    {
+      context: 'Performance & Optimization',
+      original: 'Improved application performance.',
+      improved: `Optimized application architecture resulting in measurable improvements to ${topKeywords[2] || 'load times'} and user experience, directly relevant to the ${topKeywords[3] || 'technical'} challenges of this position.`,
+    },
+    {
+      context: 'Collaboration & Leadership',
+      original: 'Collaborated with team members.',
+      improved: `Led cross-functional collaboration with engineering and product teams to deliver ${topKeywords[4] || 'feature'}-aligned solutions, demonstrating the communication skills required for this ${jobTitle} opportunity.`,
+    },
+  ];
+
+  const changes = [
+    `Rewrote professional summary targeting "${jobTitle}"`,
+    `Identified ${skillsToAdd.length} skills to highlight: ${skillsToAdd.slice(0, 3).join(', ') || 'None missing'}`,
+    `Aligned bullet points with ${topKeywords.length} JD keywords`,
+    'Applied action verbs and quantification patterns for ATS optimization',
+  ];
+
+  return {
+    professionalSummary,
+    skillsToAdd,
+    experienceBullets,
+    changes,
+    atsImprovementEstimate: Math.min(skillsToAdd.length * 3 + 10, 22),
+    localFallback: true,
+  };
 }
 
 module.exports = { modifyResumeForJob };
