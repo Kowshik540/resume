@@ -377,4 +377,5 @@ For issues or questions:
 **Browser Support:** Modern browsers (Chrome, Firefox, Safari, Edge)
 **Mobile Support:** iOS Safari 12+, Chrome Mobile, Android 8+#   R e s u m e  
  #   r e s u m e  
+ #   R E Z O N A  
  
